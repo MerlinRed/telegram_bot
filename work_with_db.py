@@ -6,7 +6,7 @@ cur = connection.cursor()
 
 
 def create_table_users():
-    cur.execute("""DROP TABLE IF EXISTS users""")
+    # cur.execute("""DROP TABLE IF EXISTS users""")
     cur.execute("""
                  CREATE TABLE IF NOT EXISTS users
                 (
@@ -15,7 +15,7 @@ def create_table_users():
                     last_name varchar(100),
                     email varchar(100) NOT NULL,
                     password varchar(100) NOT NULL,
-                    active bool default False NOT NULL,
+                    mail_activated bool default False NOT NULL,
                     CONSTRAINT PK_users_user_id PRIMARY KEY(user_id)
                 
                 )
@@ -56,7 +56,7 @@ def select_user_email(user_id, email):
 
 def select_active_from_db(user_id):
     try:
-        cur.execute("""SELECT active FROM users WHERE user_id = %s""",
+        cur.execute("""SELECT mail_activated FROM users WHERE user_id = %s""",
                     (user_id,))
         connection.commit()
         fetch = cur.fetchone()
@@ -64,6 +64,12 @@ def select_active_from_db(user_id):
         return True if result else False
     except InFailedSqlTransaction:
         connection.rollback()
+
+
+def update_mail_activated(user_id, email):
+    cur.execute("""UPDATE users SET mail_activated=true WHERE user_id = %s and email = %s""",
+                (user_id, email))
+    connection.commit()
 
 
 create_table_users()
