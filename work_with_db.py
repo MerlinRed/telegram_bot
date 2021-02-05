@@ -1,22 +1,24 @@
 import psycopg2
 from psycopg2.errors import InFailedSqlTransaction
+from config import PG_USER, PG_PASS
 
-connection = psycopg2.connect(dbname='telegrambot', user='postgres', password='1')
+connection = psycopg2.connect(dbname='telegrambot', user=PG_USER, password=PG_PASS)
 cur = connection.cursor()
 
 
 def create_table_users():
-    # cur.execute("""DROP TABLE IF EXISTS users""")
+    cur.execute("""DROP TABLE IF EXISTS users""")
     cur.execute("""
                  CREATE TABLE IF NOT EXISTS users
                 (
+                    id int GENERATED ALWAYS AS IDENTITY NOT NULL,
                     user_id integer NOT NULL,
                     first_name varchar(100) NOT NULL,
                     last_name varchar(100),
                     email varchar(100) NOT NULL,
                     password varchar(100) NOT NULL,
                     mail_activated bool default False NOT NULL,
-                    CONSTRAINT PK_users_user_id PRIMARY KEY(user_id)
+                    CONSTRAINT PK_users_id PRIMARY KEY(id)
                 
                 )
                 """)
