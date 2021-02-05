@@ -1,7 +1,8 @@
 import psycopg2
 from psycopg2.errors import InFailedSqlTransaction
+from config import PG_USER, PG_PASS
 
-connection = psycopg2.connect(dbname='telegrambot', user='postgres', password='1')
+connection = psycopg2.connect(dbname='telegrambot', user=PG_USER, password=PG_PASS)
 cur = connection.cursor()
 
 
@@ -10,12 +11,14 @@ def create_table_users():
     cur.execute("""
                  CREATE TABLE IF NOT EXISTS users
                 (
+                    id int GENERATED ALWAYS AS IDENTITY NOT NULL,
                     user_id integer NOT NULL,
                     first_name varchar(100) NOT NULL,
                     last_name varchar(100),
                     email varchar(100) NOT NULL,
                     password varchar(100) NOT NULL,
-                    CONSTRAINT PK_users_user_id PRIMARY KEY(user_id)
+                    mail_activated bool default False NOT NULL,
+                    CONSTRAINT PK_users_id PRIMARY KEY(id)
                 
                 )
                 """)
@@ -36,10 +39,39 @@ def select_user_from_db(user_id, email, password):
         cur.execute("""SELECT email, password FROM users WHERE user_id = %s and email = %s and password = %s""",
                     (user_id, email, password))
         connection.commit()
-        full_fetch = cur.fetchall()
-        return True if full_fetch else False
+        fetch = cur.fetchall()
+        return True if fetch else False
     except InFailedSqlTransaction:
         connection.rollback()
+
+
+def select_user_email(user_id, email):
+    try:
+        cur.execute("""SELECT user_id, email FROM users WHERE user_id = %s and email = %s""",
+                    (user_id, email))
+        connection.commit()
+        fetch = cur.fetchone()
+        return True if fetch else False
+    except InFailedSqlTransaction:
+        connection.rollback()
+
+
+def select_active_from_db(user_id):
+    try:
+        cur.execute("""SELECT mail_activated FROM users WHERE user_id = %s""",
+                    (user_id,))
+        connection.commit()
+        fetch = cur.fetchone()
+        for result in fetch: ...
+        return True if result else False
+    except InFailedSqlTransaction:
+        connection.rollback()
+
+
+def update_mail_activated(user_id, email):
+    cur.execute("""UPDATE users SET mail_activated=true WHERE user_id = %s and email = %s""",
+                (user_id, email))
+    connection.commit()
 
 
 create_table_users()
