@@ -1,14 +1,12 @@
 import logging
 import re
 
-from psycopg2.errors import UniqueViolation
 from telebot import types
 
 from create_password import create_password
 from load_all import bot
-from message_to_email import send_password
-from work_with_db import insert_user_in_db, select_user_email
-from work_with_db import select_user_from_db, select_active_from_db
+from message_to_email import send_password_to_email
+from work_with_db import insert_user_in_db, select_user_email, select_user_from_db, select_active_from_db
 
 CLIENT_AUTH = False
 EMAIL = None
@@ -42,10 +40,10 @@ def auth_reg(message):
 
 def authorization(message):
     if select_user_from_db(user_id=message.from_user.id, email=EMAIL, password=PASSWORD):
-        # if not check_authorization(message.from_user.id):
-        #     bot.send_message(chat_id=message.chat.id,
-        #     text='Вы не можете пользоваться ботом пока не подтвердите свою почту')
-        #     return
+        if not check_authorization(message.from_user.id):
+            bot.send_message(chat_id=message.chat.id,
+                             text='Вы не можете пользоваться ботом пока не подтвердите свою почту')
+            return
         bot.send_message(chat_id=message.chat.id, text='Авторизация прошла успешна. Доступ к боту открыт')
         global CLIENT_AUTH
         CLIENT_AUTH = True
@@ -54,6 +52,9 @@ def authorization(message):
 
 
 def authorization_email(message):
+    if CLIENT_AUTH:
+        bot.send_message(chat_id=message.chat.id, text='Вы уже авторизованы')
+        return
     pattern = re.compile('[\w.-]+@[\w.-]+\.?[\w]+?')
     bot.send_message(chat_id=message.chat.id, text='Проверка адреса почты')
     email = message.text
@@ -92,17 +93,15 @@ def registration(message):
     is_valid = pattern.match(email)
     is_valid_email = is_valid.group() if is_valid else False
     if is_valid_email:
+        if check_registration_user(user_id=message.from_user.id, email=email):
+            bot.send_message(chat_id=message.chat.id, text='Вы уже зарегестрированы')
+            return
         password = create_password()
-        try:
-            insert_user_in_db(user_id=message.from_user.id, first_name=message.chat.first_name,
-                              last_name=message.chat.last_name,
-                              email=email, password=password)
-            send_password(email=email, password=password)
-            bot.send_message(chat_id=message.chat.id, text='Для вас сгенерирован пароль и отправлен на вашу почту')
-        except UniqueViolation:
-            if not check_registration_user(message.from_user.id, email):
-                bot.send_message(chat_id=message.chat.id, text='Вы уже зарегестрированы')
-                return
+        insert_user_in_db(user_id=message.from_user.id, first_name=message.chat.first_name,
+                          last_name=message.chat.last_name,
+                          email=email, password=password)
+        send_password_to_email(email=email, password=password)
+        bot.send_message(chat_id=message.chat.id, text='Для вас сгенерирован пароль и отправлен на вашу почту')
     else:
         bot.send_message(chat_id=message.chat.id, text='Вы ввели некорректный адрес почты')
 

@@ -1,5 +1,6 @@
 import psycopg2
 from psycopg2.errors import InFailedSqlTransaction
+
 from config import PG_USER, PG_PASS
 
 connection = psycopg2.connect(dbname='telegrambot', user=PG_USER, password=PG_PASS)
@@ -7,11 +8,10 @@ cur = connection.cursor()
 
 
 def create_table_users():
-    cur.execute("""DROP TABLE IF EXISTS users""")
     cur.execute("""
                  CREATE TABLE IF NOT EXISTS users
                 (
-                    id int GENERATED ALWAYS AS IDENTITY NOT NULL,
+                    id serial,
                     user_id integer NOT NULL,
                     first_name varchar(100) NOT NULL,
                     last_name varchar(100),
@@ -28,8 +28,8 @@ def create_table_users():
 
 def insert_user_in_db(user_id, first_name, last_name, email, password):
     cur.execute("""
-                INSERT INTO users VALUES
-                (%s,%s,%s,%s,%s)
+                INSERT INTO users (user_id, first_name, last_name, email, password) 
+                VALUES (%s,%s,%s,%s,%s)
                 """, (user_id, first_name, last_name, email, password))
     connection.commit()
 
@@ -68,9 +68,9 @@ def select_active_from_db(user_id):
         connection.rollback()
 
 
-def update_mail_activated(user_id, email):
-    cur.execute("""UPDATE users SET mail_activated=true WHERE user_id = %s and email = %s""",
-                (user_id, email))
+def update_mail_activated(email):
+    cur.execute("""UPDATE users SET mail_activated = TRUE WHERE email = %s""",
+                (email,))
     connection.commit()
 
 
