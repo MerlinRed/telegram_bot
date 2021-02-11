@@ -1,29 +1,28 @@
+#!/usr/bin/python3
 import logging
 import re
 
 from load_all import bot
-from work_with_db import select_user_from_db, select_active_from_db
+from work_with_db import select_user_from_db, select_active_from_db, update_user_authorization, select_auth_user
 
-CLIENT_AUTH = False
 EMAIL = None
 PASSWORD = None
 
 
 def authorization(message):
     if select_user_from_db(user_id=message.from_user.id, email=EMAIL, password=PASSWORD):
-        if not check_authorization(message.from_user.id):
+        if not check_email_authorization(message.from_user.id):
             bot.send_message(chat_id=message.chat.id,
                              text='Вы не можете пользоваться ботом пока не подтвердите свою почту')
             return
         bot.send_message(chat_id=message.chat.id, text='Авторизация прошла успешна. Доступ к боту открыт')
-        global CLIENT_AUTH
-        CLIENT_AUTH = True
+        update_user_authorization(user_id=message.from_user.id)
     else:
         bot.send_message(chat_id=message.chat.id, text='Ошибка при авторизации. Попробуйте еще раз')
 
 
 def authorization_email(message):
-    if CLIENT_AUTH:
+    if check_user_authorization(user_id=message.from_user.id):
         bot.send_message(chat_id=message.chat.id, text='Вы уже авторизованы')
         return
     pattern = re.compile('[\w.-]+@[\w.-]+\.?[\w]+?')
@@ -45,6 +44,10 @@ def authorization_email(message):
         bot.send_message(chat_id=message.chat.id, text='Вы ввели некорректный адрес почты')
 
 
+def check_user_authorization(user_id):
+    return True if select_auth_user(user_id=user_id) else False
+
+
 def authorization_email_password(message):
     password = message.text
     global PASSWORD
@@ -52,5 +55,5 @@ def authorization_email_password(message):
     authorization(message)
 
 
-def check_authorization(user_id):
-    return True if select_active_from_db(user_id) else False
+def check_email_authorization(user_id):
+    return True if select_active_from_db(user_id=user_id) else False

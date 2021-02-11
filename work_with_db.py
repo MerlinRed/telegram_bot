@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import psycopg2
 from psycopg2.errors import InFailedSqlTransaction
 
@@ -18,8 +19,8 @@ def create_table_users():
                     email varchar(100) NOT NULL,
                     password varchar(100) NOT NULL,
                     mail_activated bool default False NOT NULL,
-                    CONSTRAINT PK_users_id PRIMARY KEY(id)
-                
+                    user_authorization bool default False NOT NULL,
+                    CONSTRAINT PK_users_id PRIMARY KEY(id) 
                 )
                 """)
 
@@ -45,10 +46,10 @@ def select_user_from_db(user_id, email, password):
         connection.rollback()
 
 
-def select_user_email(user_id, email):
+def select_user_account(user_id):
     try:
-        cur.execute("""SELECT user_id, email FROM users WHERE user_id = %s and email = %s""",
-                    (user_id, email))
+        cur.execute("""SELECT user_id FROM users WHERE user_id = %s""",
+                    (user_id,))
         connection.commit()
         fetch = cur.fetchone()
         return True if fetch else False
@@ -62,8 +63,26 @@ def select_active_from_db(user_id):
                     (user_id,))
         connection.commit()
         fetch = cur.fetchone()
-        for result in fetch: ...
-        return True if result else False
+        if fetch:
+            for result in fetch: ...
+            return True if result else False
+        else:
+            return True if fetch else False
+    except InFailedSqlTransaction:
+        connection.rollback()
+
+
+def select_auth_user(user_id):
+    try:
+        cur.execute("""SELECT user_authorization FROM users WHERE user_id = %s""",
+                    (user_id,))
+        connection.commit()
+        fetch = cur.fetchone()
+        if fetch:
+            for result in fetch: ...
+            return True if result else False
+        else:
+            return True if fetch else False
     except InFailedSqlTransaction:
         connection.rollback()
 
@@ -71,6 +90,12 @@ def select_active_from_db(user_id):
 def update_mail_activated(email):
     cur.execute("""UPDATE users SET mail_activated = TRUE WHERE email = %s""",
                 (email,))
+    connection.commit()
+
+
+def update_user_authorization(user_id):
+    cur.execute("""UPDATE users SET user_authorization = TRUE WHERE mail_activated = TRUE and user_id = %s""",
+                (user_id,))
     connection.commit()
 
 
