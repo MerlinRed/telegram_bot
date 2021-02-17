@@ -42,6 +42,10 @@ def authorization_email(message):
         bot.send_message(chat_id=message.chat.id, text='Вы ввели некорректный адрес почты.')
 
 
+def check_user_authorization(user_id):
+    return True if select_auth_user(user_id=user_id) else False
+
+
 def authorization_email_password(message):
     password = message.text
     global PASSWORD
@@ -51,7 +55,7 @@ def authorization_email_password(message):
 
 def check_email_authorization(user_id):
     return True if select_active_from_db(user_id=user_id) else False
-
+  
 
 def check_user_authorization(user_id):
     return True if select_auth_user(user_id=user_id) else False

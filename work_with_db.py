@@ -97,12 +97,11 @@ def update_user_authorization(user_id):
     cur.execute("""UPDATE users SET user_authorization = TRUE WHERE mail_activated = TRUE and user_id = %s""",
                 (user_id,))
     connection.commit()
-
-
+    
+    
 def update_exit_user_from_account(user_id):
     cur.execute("""UPDATE users SET user_authorization = FALSE WHERE mail_activated = TRUE and user_id = %s""",
                 (user_id,))
     connection.commit()
-
-
+    
 create_table_users()
